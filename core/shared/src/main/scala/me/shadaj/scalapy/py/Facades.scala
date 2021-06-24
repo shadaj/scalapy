@@ -18,6 +18,4 @@ abstract class FacadeCreator[F <: Any] {
   def create(value: PyValue): F
 }
 
-object FacadeCreator {
-  implicit def getCreator[F <: Any]: FacadeCreator[F] = macro FacadeImpl.creator[F]
-}
+object FacadeCreator extends FacadesCreatorMacros {}

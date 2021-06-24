@@ -26,7 +26,7 @@ trait Reader[T] {
 }
 
 object Reader extends TupleReaders with FunctionReaders {
-  implicit val anyReader = new Reader[py.Any] {
+  implicit val anyReader: Reader[py.Any] = new Reader[py.Any] {
     override def readNative(r: Platform.Pointer): py.Any = py.Any.populateWith(PyValue.fromBorrowed(r))
   }
 
@@ -34,11 +34,11 @@ object Reader extends TupleReaders with FunctionReaders {
     override def readNative(r: Platform.Pointer): F = creator.create(PyValue.fromBorrowed(r))
   }
 
-  implicit val unitReader = new Reader[Unit] {
+  implicit val unitReader: Reader[Unit] = new Reader[Unit] {
     override def readNative(r: Platform.Pointer): Unit = ()
   }
 
-  implicit val byteReader = new Reader[Byte] {
+  implicit val byteReader: Reader[Byte] = new Reader[Byte] {
     override def readNative(r: Platform.Pointer): Byte = {
       val res = CPythonAPI.PyLong_AsLongLong(r)
       if (res == -1) {
@@ -49,7 +49,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val intReader = new Reader[Int] {
+  implicit val intReader: Reader[Int] = new Reader[Int] {
     override def readNative(r: Platform.Pointer): Int = {
       val res = CPythonAPI.PyLong_AsLongLong(r)
       if (res == -1) {
@@ -60,7 +60,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val longReader = new Reader[Long] {
+  implicit val longReader: Reader[Long] = new Reader[Long] {
     override def readNative(r: Platform.Pointer): Long = {
       val res = CPythonAPI.PyLong_AsLongLong(r)
       if (res == -1) {
@@ -71,7 +71,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val doubleReader = new Reader[Double] {
+  implicit val doubleReader: Reader[Double] = new Reader[Double] {
     override def readNative(r: Platform.Pointer): Double = {
       val res = CPythonAPI.PyFloat_AsDouble(r)
       if (res == -1.0) {
@@ -82,7 +82,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val floatReader = new Reader[Float] {
+  implicit val floatReader: Reader[Float] = new Reader[Float] {
     override def readNative(r: Platform.Pointer): Float = {
       val res = CPythonAPI.PyFloat_AsDouble(r)
       if (res == -1.0) {
@@ -93,7 +93,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val booleanReader = new Reader[Boolean] {
+  implicit val booleanReader: Reader[Boolean] = new Reader[Boolean] {
     override def readNative(r: Platform.Pointer): Boolean = {
       if (r == CPythonInterpreter.falseValue.underlying) false
       else if (r == CPythonInterpreter.trueValue.underlying) true
@@ -103,7 +103,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val stringReader = new Reader[String] {
+  implicit val stringReader: Reader[String] = new Reader[String] {
     override def readNative(r: Platform.Pointer): String = {
       val cStr = CPythonAPI.PyUnicode_AsUTF8(r)
       CPythonInterpreter.throwErrorIfOccured()
@@ -111,7 +111,7 @@ object Reader extends TupleReaders with FunctionReaders {
     }
   }
 
-  implicit val charReader = new Reader[Char] {
+  implicit val charReader: Reader[Char] = new Reader[Char] {
     override def readNative(r: Platform.Pointer): Char = {
       val rStr = stringReader.readNative(r)
       if (rStr.length != 1) {

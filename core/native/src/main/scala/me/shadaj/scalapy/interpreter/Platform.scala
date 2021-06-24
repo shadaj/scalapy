@@ -9,7 +9,7 @@ import scala.scalanative.runtime
 import scala.scalanative.runtime.Intrinsics
 import scala.scalanative.unsigned._
 
-object Platform {
+object Platform extends PlatformMacros {
   final val isNative = true
 
   def Zone[T](fn: sn.Zone => T): T = sn.Zone(fn)
@@ -44,10 +44,7 @@ object Platform {
   def intToCSize(int: Int): sn.CSize = int.toULong
 
   def dereferencePointerToPointer(pointer: PointerToPointer): Pointer = !pointer
-
-  import scala.language.experimental.macros
-  def getFnPtr2(fn: (Pointer, Pointer) => Pointer): (scala.Any, Pointer) = macro ScalaNativeHelpers.inlineFnPtr2
-
+  
   def alloc(size: Int): Pointer = {
     lc.stdlib.malloc(size.toULong)
   }

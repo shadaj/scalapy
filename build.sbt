@@ -5,7 +5,9 @@ organization in ThisBuild := "me.shadaj"
 
 lazy val scala212Version = "2.12.13"
 lazy val scala213Version = "2.13.5"
-lazy val supportedScalaVersions = List(scala212Version, scala213Version)
+lazy val scala3Version = "3.0.0"
+lazy val supportedScalaVersions = List(scala212Version, scala213Version, scala3Version)
+lazy val scala2Versions = List(scala212Version, scala213Version)
 
 scalaVersion in ThisBuild := scala213Version
 
@@ -30,8 +32,22 @@ lazy val macros = crossProject(JVMPlatform, NativePlatform)
   .in(file("coreMacros"))
   .settings(
     name := "scalapy-macros",
-    crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+    crossScalaVersions := scala2Versions,
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) => Seq(
+          "org.scala-lang" % "scala-reflect" % scalaVersion.value
+        )
+        case _ => Seq.empty
+      }
+    },
+    unmanagedSourceDirectories in Compile += {
+      val sharedSourceDir = (baseDirectory in ThisBuild).value / "coreMacros/src/main"
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) => sharedSourceDir / "scala-2"
+        case _ => sharedSourceDir / "scala-3"
+      }
+    }
   )
 
 lazy val macrosJVM = macros.jvm
@@ -56,7 +72,6 @@ lazy val core = crossProject(JVMPlatform, NativePlatform)
   .dependsOn(macros)
   .settings(
     name := "scalapy-core",
-    crossScalaVersions := supportedScalaVersions,
     sourceGenerators in Compile += Def.task {
       val fileToWrite = (sourceManaged in Compile).value / "TupleReaders.scala"
       val methods = (2 to 22).map { n =>
@@ -155,18 +170,35 @@ lazy val core = crossProject(JVMPlatform, NativePlatform)
       Seq(fileToWrite)
     },
     libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % "2.4.4",
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) => Seq(
+          "org.scala-lang" % "scala-reflect" % scalaVersion.value
+        )
+        case _ => Seq.empty
+      }
+    },
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.9" % Test,
     unmanagedSourceDirectories in Compile += {
       val sharedSourceDir = (baseDirectory in ThisBuild).value / "core/shared/src/main"
-      if (scalaVersion.value.startsWith("2.13.")) sharedSourceDir / "scala-2.13"
+      if (scalaVersion.value.startsWith("2.13.") || scalaVersion.value.startsWith("3")) sharedSourceDir / "scala-2.13"
       else sharedSourceDir / "scala-2.11_2.12"
+    },
+    unmanagedSourceDirectories in Compile += {
+      val sharedSourceDir = (baseDirectory in ThisBuild).value / "core/shared/src/main"
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) => sharedSourceDir / "scala-2"
+        case _ => sharedSourceDir / "scala-3"
+      }
     }
   ).jvmSettings(
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies += "net.java.dev.jna" % "jna" % "5.8.0",
     fork in Test := true,
-    javaOptions in Test += s"-Djna.library.path=$pythonLibsDir"
+    javaOptions in Test += s"-Djna.library.path=$pythonLibsDir",
+    unmanagedSources / excludeFilter := HiddenFileFilter || "*Native*"
   ).nativeSettings(
+    crossScalaVersions := scala2Versions,
     nativeLinkStubs := true,
     nativeLinkingOptions ++= pythonLdFlags
   )

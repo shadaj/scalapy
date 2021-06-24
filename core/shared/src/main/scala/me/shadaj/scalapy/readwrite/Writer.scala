@@ -75,7 +75,7 @@ object Writer extends TupleWriters with FunctionWriters {
     override def writeNative(v: String): Platform.Pointer = CPythonInterpreter.toNewString(v)
   }
 
-  implicit def mapWriter[K, V](implicit kWriter: Writer[K], vWriter: Writer[V]) = new Writer[Map[K, V]] {
+  implicit def mapWriter[K, V](implicit kWriter: Writer[K], vWriter: Writer[V]): Writer[Map[K, V]] = new Writer[Map[K, V]] {
     override def write(map: Map[K, V]): PyValue = {
       val obj = CPythonInterpreter.newDictionary()
       map.foreach { case (k, v) =>
